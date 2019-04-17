@@ -1,0 +1,10 @@
+[
+  {
+    "key": "Endpoint",
+    "message": "Endpoint must not be blank."
+  },
+  {
+    "key": "EndPoint",
+    "message": "Is an unknown property"
+  }
+]

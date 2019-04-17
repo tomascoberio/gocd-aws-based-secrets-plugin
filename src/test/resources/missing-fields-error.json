@@ -1,0 +1,10 @@
+[
+  {
+    "key": "Endpoint",
+    "message": "Endpoint must not be blank."
+  },
+  {
+    "key": "Region",
+    "message": "Region must not be blank."
+  }
+]
