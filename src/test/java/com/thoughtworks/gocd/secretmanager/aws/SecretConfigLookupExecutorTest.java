@@ -17,7 +17,8 @@
 package com.thoughtworks.gocd.secretmanager.aws;
 
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.services.secretsmanager.model.*;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 import com.thoughtworks.gocd.secretmanager.aws.request.SecretConfigRequest;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,9 +41,9 @@ import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 class SecretConfigLookupExecutorTest {
     @Mock
     private AWSSecretsManager secretsManager;
-    @Mock
-    private ListSecretsResult secretsResult;
     private SecretConfigRequest request;
+    @Mock
+    GetSecretValueResult secretsResult;
 
     @BeforeEach
     void setUp() {
@@ -49,29 +51,33 @@ class SecretConfigLookupExecutorTest {
         SecretConfig secretConfig = mock(SecretConfig.class);
         request = mock(SecretConfigRequest.class);
         when(request.getConfiguration()).thenReturn(secretConfig);
-        when(secretsManager.listSecrets(any(ListSecretsRequest.class))).thenReturn(secretsResult);
+        when(secretsResult.getSecretString()).thenReturn("{\"key1\":\"value1\",\"key2\":\"value2\"}");
+        when(secretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(secretsResult);
     }
 
     @Test
-    void shouldReturnLookupResponse() throws JSONException {
-        String KEY1 = "key1";
-
-        when(request.getKeys()).thenReturn(Collections.singletonList(KEY1));
-        SecretListEntry key1 = new SecretListEntry().withName(KEY1);
-        List<SecretListEntry> secretsListEntry = Collections.singletonList(key1);
-        when(secretsResult.getSecretList()).thenReturn(secretsListEntry);
-
-        GetSecretValueResult result1 = mock(GetSecretValueResult.class);
-        when(secretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(result1);
-
-        when(result1.getName()).thenReturn(KEY1);
-        when(result1.getSecretString()).thenReturn("value1");
+    void shouldReturnLookupResponseForSingleKey() throws JSONException {
+        List<String> requestIds = Collections.singletonList("key1");
+        when(request.getKeys()).thenReturn(requestIds);
 
         final GoPluginApiResponse response = new SecretConfigLookupExecutor(secretsManager)
                 .execute(request);
 
         assertThat(response.responseCode()).isEqualTo(200);
         final String expectedResponse = "[{\"key\":\"key1\",\"value\":\"value1\"}]";
+        assertEquals(expectedResponse, response.responseBody(), true);
+    }
+
+    @Test
+    void shouldReturnLookupResponseForMultipleKeys() throws JSONException {
+        List<String> requestIds = Arrays.asList("key1", "key2");
+        when(request.getKeys()).thenReturn(requestIds);
+
+        final GoPluginApiResponse response = new SecretConfigLookupExecutor(secretsManager)
+                .execute(request);
+
+        assertThat(response.responseCode()).isEqualTo(200);
+        final String expectedResponse = "[{\"key\":\"key1\",\"value\":\"value1\"},{\"key\":\"key2\",\"value\":\"value2\"}]";
         assertEquals(expectedResponse, response.responseBody(), true);
     }
 }
