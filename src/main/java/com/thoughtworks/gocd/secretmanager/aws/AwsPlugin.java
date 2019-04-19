@@ -5,6 +5,7 @@ import com.github.bdpiparva.plugin.base.dispatcher.RequestDispatcherBuilder;
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.GoPlugin;
 import com.thoughtworks.go.plugin.api.GoPluginIdentifier;
+import com.thoughtworks.go.plugin.api.annotation.Extension;
 import com.thoughtworks.go.plugin.api.exceptions.UnhandledRequestTypeException;
 import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
@@ -12,6 +13,7 @@ import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 
 import static java.util.Collections.singletonList;
 
+@Extension
 public class AwsPlugin implements GoPlugin {
     private RequestDispatcher requestDispatcher;
 
