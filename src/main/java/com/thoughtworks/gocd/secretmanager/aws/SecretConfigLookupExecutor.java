@@ -5,8 +5,10 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
-import com.amazonaws.services.secretsmanager.model.*;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 import com.github.bdpiparva.plugin.base.dispatcher.LookupExecutor;
+import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
@@ -16,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import static com.github.bdpiparva.plugin.base.GsonTransformer.fromJson;
 import static com.github.bdpiparva.plugin.base.GsonTransformer.toJson;
@@ -37,47 +39,42 @@ public class SecretConfigLookupExecutor extends LookupExecutor<SecretConfigReque
 
     @Override
     protected GoPluginApiResponse execute(SecretConfigRequest request) {
+        AWSSecretsManager client = null;
         try {
-            AWSSecretsManager client = getClient(request.getConfiguration());
+            SecretConfig requestConfiguration = request.getConfiguration();
+            client = getClient(requestConfiguration);
 
             List<String> secretIds = request.getKeys();
             if (secretIds == null || secretIds.isEmpty()) {
                 return DefaultGoPluginApiResponse.badRequest("No secret key provided!!!");
             }
-            String nextToken = "";
+            String secretName = requestConfiguration.getSecretName();
+            GetSecretValueResult secretValueResult = client.getSecretValue(new GetSecretValueRequest().withSecretId(secretName));
+
+            String secretStringValue = secretValueResult.getSecretString();
+            ByteBuffer secretBinaryValue = secretValueResult.getSecretBinary();
+
             final Secrets secrets = new Secrets();
-            do {
-                ListSecretsResult listSecretsResult = client.listSecrets(new ListSecretsRequest());
+            if (!StringUtils.isEmpty(secretStringValue)) {
+                Map json = new Gson().fromJson(secretStringValue, Map.class);
 
-                nextToken = listSecretsResult.getNextToken();
-                List<SecretListEntry> secretList = listSecretsResult.getSecretList();
-
-                if (secretList == null || secretList.isEmpty()) {
-                    return DefaultGoPluginApiResponse.badRequest("No secrets found!!!");
-                }
-
-                List<GetSecretValueResult> getSecretValueResults = secretList.stream()
-                        .filter(secretListEntry -> secretIds.contains(secretListEntry.getName()))
-                        .map(secretListEntry -> client.getSecretValue(new GetSecretValueRequest()
-                                .withSecretId(secretListEntry.getKmsKeyId())))
-                        .collect(Collectors.toList());
-
-                for (GetSecretValueResult secretValueResult : getSecretValueResults) {
-                    String secretName = secretValueResult.getName();
-                    String secretStringValue = secretValueResult.getSecretString();
-                    ByteBuffer secretBinaryValue = secretValueResult.getSecretBinary();
-
-                    if (!StringUtils.isEmpty(secretStringValue)) {
-                        secrets.add(secretName, secretStringValue);
-                    } else if (secretBinaryValue != null) {
-                        secrets.add(secretName, secretBinaryValue.toString());
+                for (String secretId : secretIds) {
+                    if (json.containsKey(secretId)) {
+                        secrets.add(secretId, json.get(secretId).toString());
                     }
                 }
-            } while (nextToken != null);
+
+            } else if (secretBinaryValue != null) {
+                secrets.add(secretName, secretBinaryValue.toString());
+            }
             return DefaultGoPluginApiResponse.success(toJson(secrets));
         } catch (Exception e) {
             LOGGER.error("Failed to lookup secret from AWS.", e);
             return DefaultGoPluginApiResponse.error(toJson(singletonMap("message", "Failed to lookup secrets from AWS. See logs for more information.")));
+        } finally {
+            if (client != null) {
+                client.shutdown();
+            }
         }
     }
 

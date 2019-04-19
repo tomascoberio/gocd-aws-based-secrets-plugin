@@ -3,3 +3,8 @@
 
 # Ignore Gradle build output directory
 build
+.DS_Store
+.idea/
+out/
+src/.DS_Store
+src/main/resources-generated/

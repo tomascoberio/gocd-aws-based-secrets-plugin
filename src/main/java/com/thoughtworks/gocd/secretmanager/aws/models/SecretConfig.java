@@ -43,6 +43,15 @@ public class SecretConfig {
     @Property(name = "Region", required = true)
     private String region;
 
+    @Expose
+    @SerializedName("SecretName")
+    @Property(name = "SecretName", required = true)
+    private String secretName;
+
+    public String getSecretName() {
+        return secretName;
+    }
+
     public String getAwsAccessKey() {
         return awsAccessKey;
     }
@@ -67,11 +76,12 @@ public class SecretConfig {
         return Objects.equals(awsEndpoint, that.awsEndpoint) &&
                 Objects.equals(awsAccessKey, that.awsAccessKey) &&
                 Objects.equals(awsSecretAccessKey, that.awsSecretAccessKey) &&
-                Objects.equals(region, that.region);
+                Objects.equals(region, that.region) &&
+                Objects.equals(secretName, that.secretName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(awsEndpoint, awsAccessKey, awsSecretAccessKey, region);
+        return Objects.hash(awsEndpoint, awsAccessKey, awsSecretAccessKey, region, secretName);
     }
 }
