@@ -3,7 +3,7 @@
 This plugin allows users to utilize [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) as a secret manager for GoCD.
 
 TODO
-- [ ] Update config view template
+- [ ] Verify config view template
 
 ### Configure the plugin
 
