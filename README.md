@@ -15,23 +15,23 @@ The plugin requires secret config in order to connect with AWS -
       <description>Some description</description>
       <configuration>
         <property>
-          <key>Endpoint</key>
+          <key>endpoint</key>
           <value>your-aws-endpoint</value>
         </property>
         <property>
-          <key>AccessKey</key>
+          <key>access_key</key>
           <value>encrypted-access-key</value>
         </property>
         <property>
-          <key>SecretAccessKey</key>
+          <key>secret_access_key</key>
           <value>encrypted-secret-access-key</value>
         </property>
         <property>
-          <key>Region</key>
+          <key>region</key>
           <value>aws-region</value>
         </property>
         <property>
-          <key>SecretName</key>
+          <key>secret_name</key>
           <value>secret-name</value>
         </property>
       </configuration>
@@ -41,11 +41,11 @@ The plugin requires secret config in order to connect with AWS -
 
 | Field           | Required  | Description                                        |
 | --------------- | --------- | -------------------------------------------------- |
-| Endpoint        | true      | The endpoint for the plugin to talk to             |
-| AccessKey       | true      | The access key as a part of AWS credentials        |
-| SecretAccessKey | true      | The secret access key as a part of AWS credentials |
-| Region          | true      | Region in which AWS secrets manager is hosted      |
-| SecretName      | true      | The name of the secret to be utilized              |
+| endpoint        | true      | The endpoint for the plugin to talk to             |
+| access_key       | true      | The access key as a part of AWS credentials        |
+| secret_access_key | true      | The secret access key as a part of AWS credentials |
+| region          | true      | Region in which AWS secrets manager is hosted      |
+| secret_name      | true      | The name of the secret to be utilized              |
 
 ### Building the code base
 To build the jar, run `./gradlew clean test assemble`
