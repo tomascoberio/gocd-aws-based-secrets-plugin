@@ -31,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 
 import java.util.Map;
 
+import static com.github.bdpiparva.plugin.base.ResourceReader.readResource;
 import static com.github.bdpiparva.plugin.base.ResourceReader.readResourceBytes;
 import static java.util.Base64.getDecoder;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,19 +39,19 @@ import static org.mockito.Mockito.mock;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 
 class AWSPluginTest {
-    private AwsPlugin vaultPlugin;
+    private AwsPlugin awsPlugin;
 
     @BeforeEach
     void setUp() {
-        vaultPlugin = new AwsPlugin();
-        vaultPlugin.initializeGoApplicationAccessor(mock(GoApplicationAccessor.class));
+        awsPlugin = new AwsPlugin();
+        awsPlugin.initializeGoApplicationAccessor(mock(GoApplicationAccessor.class));
     }
 
     @Test
     void shouldReturnPluginIdentifier() {
-        assertThat(vaultPlugin.pluginIdentifier()).isNotNull();
-        assertThat(vaultPlugin.pluginIdentifier().getExtension()).isEqualTo("secrets");
-        assertThat(vaultPlugin.pluginIdentifier().getSupportedExtensionVersions())
+        assertThat(awsPlugin.pluginIdentifier()).isNotNull();
+        assertThat(awsPlugin.pluginIdentifier().getExtension()).isEqualTo("secrets");
+        assertThat(awsPlugin.pluginIdentifier().getSupportedExtensionVersions())
                 .contains("1.0");
     }
 
@@ -59,7 +60,7 @@ class AWSPluginTest {
     void shouldReturnConfigMetadata(String expectedJson) throws UnhandledRequestTypeException, JSONException {
         final DefaultGoPluginApiRequest request = request("go.cd.secrets.secrets-config.get-metadata");
 
-        final GoPluginApiResponse response = vaultPlugin.handle(request);
+        final GoPluginApiResponse response = awsPlugin.handle(request);
 
         assertThat(response.responseCode()).isEqualTo(200);
         assertEquals(expectedJson, response.responseBody(), true);
@@ -69,7 +70,7 @@ class AWSPluginTest {
     void shouldReturnIcon() throws UnhandledRequestTypeException {
         final DefaultGoPluginApiRequest request = request("go.cd.secrets.get-icon");
 
-        final GoPluginApiResponse response = vaultPlugin.handle(request);
+        final GoPluginApiResponse response = awsPlugin.handle(request);
 
         Map<String, String> responseBody = toMap(response.responseBody());
 
@@ -83,13 +84,13 @@ class AWSPluginTest {
     void shouldReturnSecretConfigView() throws UnhandledRequestTypeException {
         final DefaultGoPluginApiRequest request = request("go.cd.secrets.secrets-config.get-view");
 
-        final GoPluginApiResponse response = vaultPlugin.handle(request);
+        final GoPluginApiResponse response = awsPlugin.handle(request);
 
         Map<String, String> responseBody = toMap(response.responseBody());
 
         assertThat(response.responseCode()).isEqualTo(200);
         assertThat(responseBody.size()).isEqualTo(1);
-        assertThat(getDecoder().decode(responseBody.get("template"))).isEqualTo(readResourceBytes("/secrets.template.html"));
+        assertThat(responseBody.get("template")).isEqualTo(readResource("/secrets.template.html"));
     }
 
     @Nested
@@ -110,9 +111,9 @@ class AWSPluginTest {
             final DefaultGoPluginApiRequest request = request(requestName);
             request.setRequestBody(requestBody);
 
-            final GoPluginApiResponse response = vaultPlugin.handle(request);
+            final GoPluginApiResponse response = awsPlugin.handle(request);
 
-            assertThat(response.responseCode()).isEqualTo(412);
+            assertThat(response.responseCode()).isEqualTo(200);
             assertEquals(expected, response.responseBody(), true);
         }
 
@@ -125,9 +126,9 @@ class AWSPluginTest {
             final DefaultGoPluginApiRequest request = request(requestName);
             request.setRequestBody(requestBody);
 
-            final GoPluginApiResponse response = vaultPlugin.handle(request);
+            final GoPluginApiResponse response = awsPlugin.handle(request);
 
-            assertThat(response.responseCode()).isEqualTo(412);
+            assertThat(response.responseCode()).isEqualTo(200);
             assertEquals(expected, response.responseBody(), true);
         }
 
@@ -137,7 +138,7 @@ class AWSPluginTest {
             final DefaultGoPluginApiRequest request = request(requestName);
             request.setRequestBody(requestBody);
 
-            final GoPluginApiResponse response = vaultPlugin.handle(request);
+            final GoPluginApiResponse response = awsPlugin.handle(request);
 
             assertThat(response.responseCode()).isEqualTo(200);
             assertEquals("[]", response.responseBody(), true);
