@@ -1,9 +1,9 @@
 package com.thoughtworks.gocd.secretmanager.aws;
 
+import cd.go.plugin.base.executors.secrets.LookupExecutor;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
 import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
-import com.github.bdpiparva.plugin.base.executors.secrets.LookupExecutor;
 import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
@@ -16,8 +16,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.bdpiparva.plugin.base.GsonTransformer.fromJson;
-import static com.github.bdpiparva.plugin.base.GsonTransformer.toJson;
+
+import static cd.go.plugin.base.GsonTransformer.fromJson;
+import static cd.go.plugin.base.GsonTransformer.toJson;
 import static java.util.Collections.singletonMap;
 
 public class SecretConfigLookupExecutor extends LookupExecutor<SecretConfigRequest> {

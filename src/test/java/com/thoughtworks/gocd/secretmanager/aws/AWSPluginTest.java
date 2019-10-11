@@ -31,8 +31,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 
 import java.util.Map;
 
-import static com.github.bdpiparva.plugin.base.ResourceReader.readResource;
-import static com.github.bdpiparva.plugin.base.ResourceReader.readResourceBytes;
+import static cd.go.plugin.base.ResourceReader.readResource;
+import static cd.go.plugin.base.ResourceReader.readResourceBytes;
 import static java.util.Base64.getDecoder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

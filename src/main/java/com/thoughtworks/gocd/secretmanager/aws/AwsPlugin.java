@@ -1,7 +1,7 @@
 package com.thoughtworks.gocd.secretmanager.aws;
 
-import com.github.bdpiparva.plugin.base.dispatcher.BaseBuilder;
-import com.github.bdpiparva.plugin.base.dispatcher.RequestDispatcher;
+import cd.go.plugin.base.dispatcher.BaseBuilder;
+import cd.go.plugin.base.dispatcher.RequestDispatcher;
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.GoPlugin;
 import com.thoughtworks.go.plugin.api.GoPluginIdentifier;

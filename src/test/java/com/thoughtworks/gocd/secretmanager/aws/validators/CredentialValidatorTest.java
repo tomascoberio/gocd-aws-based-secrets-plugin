@@ -1,6 +1,6 @@
 package com.thoughtworks.gocd.secretmanager.aws.validators;
 
-import com.github.bdpiparva.plugin.base.validation.ValidationResult;
+import cd.go.plugin.base.validation.ValidationResult;
 import com.thoughtworks.gocd.secretmanager.aws.annotations.JsonSource;
 import com.thoughtworks.gocd.secretmanager.aws.extensions.EnvironmentVariable;
 import com.thoughtworks.gocd.secretmanager.aws.extensions.SystemProperty;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
-import static com.github.bdpiparva.plugin.base.GsonTransformer.toJson;
+import static cd.go.plugin.base.GsonTransformer.toJson;
 import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.ACCESS_KEY;
 import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.SECRET_ACCESS_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
