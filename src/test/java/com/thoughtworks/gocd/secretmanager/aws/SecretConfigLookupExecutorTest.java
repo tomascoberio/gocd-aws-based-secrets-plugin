@@ -16,9 +16,6 @@
 
 package com.thoughtworks.gocd.secretmanager.aws;
 
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 import com.thoughtworks.gocd.secretmanager.aws.request.SecretConfigRequest;
@@ -27,10 +24,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -41,31 +38,27 @@ import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 class SecretConfigLookupExecutorTest {
     private SecretConfigRequest request;
     @Mock
-    GetSecretValueResult secretsResult;
-    @Mock
     private AWSClientFactory clientFactory;
     @Mock
-    private AWSSecretsManager secretsManager;
+    private SecretManagerClient secretsManager;
     private SecretConfigLookupExecutor secretConfigLookupExecutor;
 
     @BeforeEach
     void setUp() {
         initMocks(this);
-        SecretConfig secretConfig = mock(SecretConfig.class);
         request = mock(SecretConfigRequest.class);
-
-        when(clientFactory.client(secretConfig)).thenReturn(secretsManager);
-        when(request.getConfiguration()).thenReturn(secretConfig);
-        when(secretsResult.getSecretString()).thenReturn("{\"key1\":\"value1\",\"key2\":\"value2\"}");
-        when(secretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(secretsResult);
-
         secretConfigLookupExecutor = new SecretConfigLookupExecutor(clientFactory);
     }
 
     @Test
     void shouldReturnLookupResponseForSingleKey() throws JSONException {
-        List<String> requestIds = Collections.singletonList("key1");
-        when(request.getKeys()).thenReturn(requestIds);
+        SecretConfig secretConfig = mock(SecretConfig.class);
+
+        when(request.getKeys()).thenReturn(singletonList("key1"));
+        when(request.getConfiguration()).thenReturn(secretConfig);
+        when(secretConfig.getSecretName()).thenReturn("secret_id");
+        when(clientFactory.client(secretConfig)).thenReturn(secretsManager);
+        when(secretsManager.lookup(any(String.class))).thenReturn(singletonMap("key1", "value1"));
 
         final GoPluginApiResponse response = secretConfigLookupExecutor.execute(request);
 
@@ -77,12 +70,37 @@ class SecretConfigLookupExecutorTest {
     @Test
     void shouldReturnLookupResponseForMultipleKeys() throws JSONException {
         List<String> requestIds = Arrays.asList("key1", "key2");
+        SecretConfig secretConfig = mock(SecretConfig.class);
+
         when(request.getKeys()).thenReturn(requestIds);
+        when(request.getConfiguration()).thenReturn(secretConfig);
+        when(secretConfig.getSecretName()).thenReturn("secret_id");
+        when(clientFactory.client(secretConfig)).thenReturn(secretsManager);
+        Map<String, String> secrets = new HashMap<>();
+        secrets.put("key1", "value1");
+        secrets.put("key2", "value2");
+        when(secretsManager.lookup(any(String.class))).thenReturn(secrets);
 
         final GoPluginApiResponse response = secretConfigLookupExecutor.execute(request);
 
         assertThat(response.responseCode()).isEqualTo(200);
         final String expectedResponse = "[{\"key\":\"key1\",\"value\":\"value1\"},{\"key\":\"key2\",\"value\":\"value2\"}]";
         assertEquals(expectedResponse, response.responseBody(), true);
+    }
+
+    @Test
+    void shouldReturnAErrorResponseIfLookupFails() throws JSONException {
+        SecretConfig secretConfig = mock(SecretConfig.class);
+
+        when(request.getKeys()).thenReturn(singletonList("key1"));
+        when(request.getConfiguration()).thenReturn(secretConfig);
+        when(secretConfig.getSecretName()).thenReturn("secret_id");
+        when(clientFactory.client(secretConfig)).thenReturn(secretsManager);
+        when(secretsManager.lookup(any(String.class))).thenThrow(new RuntimeException("error"));
+
+        final GoPluginApiResponse response = secretConfigLookupExecutor.execute(request);
+
+        assertThat(response.responseCode()).isEqualTo(500);
+        assertEquals("{\"message\":\"Failed to lookup secrets from AWS - error, See logs for more information.\"}", response.responseBody(), true);
     }
 }

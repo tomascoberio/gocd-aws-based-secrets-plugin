@@ -2,6 +2,7 @@ package com.thoughtworks.gocd.secretmanager.aws;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
+import com.amazonaws.services.secretsmanager.AWSSecretsManagerClient;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,10 +32,10 @@ class AWSClientFactoryTest {
         SecretConfig secretConfig = mock(SecretConfig.class);
         when(secretConfig.getAwsEndpoint()).thenReturn("endpoint-url");
 
-        AWSSecretsManager secretsManager = awsClientFactory.client(secretConfig);
+        SecretManagerClient secretsManager = awsClientFactory.client(secretConfig);
 
         assertThat(secretsManager).isNotNull()
-                .isInstanceOf(AWSSecretsManager.class);
+                .isInstanceOf(SecretManagerClient.class);
     }
 
     @Test
@@ -44,8 +45,8 @@ class AWSClientFactoryTest {
         SecretConfig secretConfig2 = mock(SecretConfig.class);
         when(secretConfig2.getAwsEndpoint()).thenReturn("url-for-secret-config-2");
 
-        AWSSecretsManager secretsManager1 = awsClientFactory.client(secretConfig1);
-        AWSSecretsManager secretsManager2 = awsClientFactory.client(secretConfig2);
+        SecretManagerClient secretsManager1 = awsClientFactory.client(secretConfig1);
+        SecretManagerClient secretsManager2 = awsClientFactory.client(secretConfig2);
 
         assertThat(secretsManager1).isNotEqualTo(secretsManager2);
     }
@@ -55,8 +56,8 @@ class AWSClientFactoryTest {
         SecretConfig secretConfig = mock(SecretConfig.class);
         when(secretConfig.getAwsEndpoint()).thenReturn("endpoint-url");
 
-        AWSSecretsManager firstManager = awsClientFactory.client(secretConfig);
-        AWSSecretsManager managerFromSecondCall = awsClientFactory.client(secretConfig);
+        SecretManagerClient firstManager = awsClientFactory.client(secretConfig);
+        SecretManagerClient managerFromSecondCall = awsClientFactory.client(secretConfig);
 
         assertThat(firstManager).isSameAs(managerFromSecondCall);
     }
