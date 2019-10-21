@@ -24,10 +24,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
+import java.util.Collections;
+import java.util.Map;
+
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 class AWSClientFactoryTest {
@@ -76,5 +79,19 @@ class AWSClientFactoryTest {
         SecretManagerClient managerFromSecondCall = awsClientFactory.client(secretConfig);
 
         assertThat(firstManager).isSameAs(managerFromSecondCall);
+    }
+
+    @Test
+    void shouldCloseAndClearAllExistingClientsInCache() {
+        Map cache = mock(Map.class);
+        SecretManagerClient client = mock(SecretManagerClient.class);
+        AWSCredentialsProviderChain awsCredentialsProviderChain = mock(AWSCredentialsProviderChain.class);
+
+        when(cache.values()).thenReturn(singletonList(client));
+
+        new AWSClientFactory(awsCredentialsProviderChain, cache).client(new SecretConfig("end", "key", "secret"));
+
+        verify(cache).clear();
+        verify(client).close();
     }
 }

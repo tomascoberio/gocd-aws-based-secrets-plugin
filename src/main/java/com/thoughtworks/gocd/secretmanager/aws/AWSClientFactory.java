@@ -18,20 +18,27 @@ package com.thoughtworks.gocd.secretmanager.aws;
 
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AWSClientFactory {
-    private final Map<SecretConfig, SecretManagerClient> secretManagerCache = new HashMap<>();
+    private Map<SecretConfig, SecretManagerClient> secretManagerCache = new ConcurrentHashMap<>();
     private AWSCredentialsProviderChain awsCredentialsProviderChain;
 
     public AWSClientFactory(AWSCredentialsProviderChain awsCredentialsProviderChain) {
         this.awsCredentialsProviderChain = awsCredentialsProviderChain;
     }
 
+    protected AWSClientFactory(AWSCredentialsProviderChain awsCredentialsProviderChain, Map<SecretConfig, SecretManagerClient> cache) {
+        this.awsCredentialsProviderChain = awsCredentialsProviderChain;
+        secretManagerCache = cache;
+    }
+
     public SecretManagerClient client(SecretConfig secretConfig) {
         if (secretManagerCache.containsKey(secretConfig)) {
             return secretManagerCache.get(secretConfig);
+        } else {
+            closeAllClientsAndClearCache();
         }
 
         synchronized (secretManagerCache) {
@@ -44,5 +51,15 @@ public class AWSClientFactory {
 
             return secretsManager;
         }
+    }
+
+    /*
+    * Currently since there is no mechanism to know if the SecretConfiguration has changed, there might be instances wherein
+    * a client is created and not closed for ever. This is a temporary mechanism to clear cache and close the client until
+    * we have a better way to know if the SecretConfig changed.
+    * */
+    private void closeAllClientsAndClearCache() {
+        secretManagerCache.values().forEach(SecretManagerClient::close);
+        secretManagerCache.clear();
     }
 }

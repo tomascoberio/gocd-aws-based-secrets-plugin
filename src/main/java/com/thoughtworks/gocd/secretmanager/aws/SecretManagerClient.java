@@ -26,7 +26,6 @@ import com.google.gson.Gson;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -34,13 +33,14 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class SecretManagerClient {
     private AWSCredentialsProviderChain awsCredentialsProviderChain;
     private final SecretCache secretCache;
+    private final AWSSecretsManager awsSecretsManager;
 
     public SecretManagerClient(SecretConfig secretConfig, AWSCredentialsProviderChain awsCredentialsProviderChain) {
         this.awsCredentialsProviderChain = awsCredentialsProviderChain;
-        AWSSecretsManager awsSecretsManager = getAwsSecretsManager(secretConfig);
+        awsSecretsManager = getAwsSecretsManager(secretConfig);
         SecretCacheConfiguration secretCacheConfiguration = new SecretCacheConfiguration()
                 .withClient(awsSecretsManager)
-                .withCacheItemTTL(TimeUnit.MINUTES.toMillis(30));
+                .withCacheItemTTL(secretConfig.getSecretCacheTTL());
         secretCache = new SecretCache(secretCacheConfiguration);
     }
 
@@ -62,5 +62,10 @@ public class SecretManagerClient {
                 .withCredentials(credentialsProvider)
                 .withEndpointConfiguration(config)
                 .build();
+    }
+
+    public void close() {
+        secretCache.close();
+        awsSecretsManager.shutdown();
     }
 }
