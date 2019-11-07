@@ -1,10 +1,18 @@
+
 # AWS Secrets Manager plugin for GoCD
 
-This plugin allows users to utilize [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) as a secret manager for GoCD.
+This is a GoCD Secrets Plugin which allows users to use [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) as a secret manager for GoCD.
+
+## Table of Contents
+* [Configure the plugin](#configure-the-plugin)
+* [Building the code base](#building-the-code-base)
+* [Troubleshooting](#troubleshooting)
 
 ### Configure the plugin
 
-The plugin requires secret config in order to connect with AWS - 
+The plugin needs to be configured with a secret config in order to connect to AWS Secrets Manager. The configuration can be added from the Secrets Management page under Admin > Secret Management.
+
+Alternatively, the configuration can be added directly to the config.xml using the configuration.
 
 ```xml
 <secretConfigs>
@@ -32,17 +40,29 @@ The plugin requires secret config in order to connect with AWS -
           <value>secret-name</value>
         </property>
       </configuration>
+      <rules>
+        <allow action="refer" type="environment">env_*</allow>
+        <deny action="refer" type="pipeline_group">my_group</deny>
+        <allow action="refer" type="pipeline_group">other_group</allow>
+      </rules>
     </secretConfig>
   </secretConfigs>
 ```
 
-| Field           | Required  | Description                                        |
-| --------------- | --------- | -------------------------------------------------- |
-| Endpoint        | true      | The endpoint for the plugin to talk to             |
-| AccessKey       | true      | The access key as a part of AWS credentials        |
-| SecretAccessKey | true      | The secret access key as a part of AWS credentials |
-| Region          | true      | Region in which AWS secrets manager is hosted      |
-| SecretName      | true      | The name of the secret to be utilized              |
+`<rules>` tag defines where this secretConfig is allowed/denied to be referred. For more details about rules and examples refer the GoCD Secret Management [documentation](https://docs.gocd.org/current/configuration/secrets_management.html)
+
+| Field           | Required  | Description                                                         |
+| --------------- | --------- | --------------------------------------------------------------------|
+| Endpoint        | true      | The AWS service endpoint for the plugin to connect.                 |
+| AccessKey       | true      | The access key as a part of AWS credentials.                        |
+| SecretAccessKey | true      | The secret access key as a part of AWS credentials.                 |
+| Region          | true      | Region in which AWS secrets manager is hosted.                      |
+| SecretName      | true      | The name of the secret to be utilized.                              |
+| SecretCacheTTL  | false     | The secrets cache TTL in milliseconds, defaults to 30 minutes. |
+
+### Caching
+The plugin caches secrets for a duration configured using the SecretCacheTTL. Currently GoCD does not provide a
+way to invalidate the cache. To invalidate the cache, change the SecretCacheTTL and save the SecretConfig.
 
 ### Building the code base
 To build the jar, run `./gradlew clean test assemble`
@@ -65,32 +85,6 @@ If you're running with GoCD server 19.6 and above on docker using one of the sup
 ```shell
 docker run -e "GOCD_SERVER_JVM_OPTIONS=-Dplugin.com.thoughtworks.gocd.secretmanager.aws.log.level=debug" ...
 ```
-
-#### If you are on GoCD version 19.5 and lower:
-
-* On Linux:
-
-    Enabling debug level logging can help you troubleshoot an issue with this plugin. To enable debug level logs, edit the file `/etc/default/go-server` (for Linux) to add:
-
-    ```shell
-    export GO_SERVER_SYSTEM_PROPERTIES="$GO_SERVER_SYSTEM_PROPERTIES -Dplugin.com.thoughtworks.gocd.secretmanager.aws.log.level=debug"
-    ```
-
-    If you're running the server via `./server.sh` script:
-
-    ```shell
-    $ GO_SERVER_SYSTEM_PROPERTIES="-Dplugin.com.thoughtworks.gocd.secretmanager.aws.log.level=debug" ./server.sh
-    ```
-
-* On windows:
-
-    Edit the file `config/wrapper-properties.conf` inside the GoCD Server installation directory (typically `C:\Program Files\Go Server`):
-
-    ```
-    # config/wrapper-properties.conf
-    # since the last "wrapper.java.additional" index is 15, we use the next available index.
-    wrapper.java.additional.16=-Dplugin.com.thoughtworks.gocd.secretmanager.aws.log.level=debug
-    ```
 
 The plugin logs are written to `LOG_DIR/plugin-com.thoughtworks.gocd.secretmanager.aws.log`. The log dir 
 - on Linux is `/var/log/go-server`
