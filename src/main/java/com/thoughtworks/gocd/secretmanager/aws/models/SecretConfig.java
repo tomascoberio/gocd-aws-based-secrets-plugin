@@ -16,11 +16,13 @@
 
 package com.thoughtworks.gocd.secretmanager.aws.models;
 
-import com.github.bdpiparva.plugin.base.annotations.Property;
+import cd.go.plugin.base.annotations.Property;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class SecretConfig {
     public static final String ACCESS_KEY = "AccessKey";
@@ -50,6 +52,17 @@ public class SecretConfig {
     @Property(name = "SecretName", required = true)
     private String secretName;
 
+    @Expose
+    @SerializedName("SecretCacheTTL")
+    @Property(name = "SecretCacheTTL", required = false)
+    private String secretCacheTTL;
+
+    public SecretConfig(String awsEndpoint, String awsAccessKey, String awsSecretAccessKey) {
+        this.awsEndpoint = awsEndpoint;
+        this.awsAccessKey = awsAccessKey;
+        this.awsSecretAccessKey = awsSecretAccessKey;
+    }
+
     public String getSecretName() {
         return secretName;
     }
@@ -70,6 +83,10 @@ public class SecretConfig {
         return awsEndpoint;
     }
 
+    public long getSecretCacheTTL() {
+        return toLong(secretCacheTTL, TimeUnit.MINUTES.toMillis(30));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -79,11 +96,24 @@ public class SecretConfig {
                 Objects.equals(awsAccessKey, that.awsAccessKey) &&
                 Objects.equals(awsSecretAccessKey, that.awsSecretAccessKey) &&
                 Objects.equals(region, that.region) &&
-                Objects.equals(secretName, that.secretName);
+                Objects.equals(secretName, that.secretName) &&
+                Objects.equals(secretCacheTTL, that.secretCacheTTL);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(awsEndpoint, awsAccessKey, awsSecretAccessKey, region, secretName);
+        return Objects.hash(awsEndpoint, awsAccessKey, awsSecretAccessKey, region, secretName, secretCacheTTL);
+    }
+
+    private long toLong(String valueAsString, long defaultValue) {
+        if (StringUtils.isBlank(valueAsString)) {
+            return defaultValue;
+        }
+
+        try {
+            return Long.parseLong(valueAsString);
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 }
