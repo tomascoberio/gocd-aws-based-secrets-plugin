@@ -57,6 +57,11 @@ public class SecretConfig {
     @Property(name = "SecretCacheTTL", required = false)
     private String secretCacheTTL;
 
+//  Required for GSON de-serialization from JSON
+    public SecretConfig() {
+
+    }
+
     public SecretConfig(String awsEndpoint, String awsAccessKey, String awsSecretAccessKey) {
         this.awsEndpoint = awsEndpoint;
         this.awsAccessKey = awsAccessKey;
