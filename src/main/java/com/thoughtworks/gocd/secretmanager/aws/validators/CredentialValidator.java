@@ -31,7 +31,15 @@ import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.SECRET
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class CredentialValidator implements Validator {
-    private final AWSCredentialsProviderChain credentialsProviderChain = new AWSCredentialsProviderChain();
+    private final AWSCredentialsProviderChain credentialsProviderChain;
+
+    public CredentialValidator() {
+        this(new AWSCredentialsProviderChain());
+    }
+
+    CredentialValidator(AWSCredentialsProviderChain credentialsProviderChain) {
+        this.credentialsProviderChain = credentialsProviderChain;
+    }
 
     @Override
     public ValidationResult validate(Map<String, String> requestBody) {

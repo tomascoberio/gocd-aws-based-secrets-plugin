@@ -17,30 +17,38 @@
 package com.thoughtworks.gocd.secretmanager.aws.validators;
 
 import cd.go.plugin.base.validation.ValidationResult;
+import com.thoughtworks.gocd.secretmanager.aws.AWSCredentialsProviderChain;
 import com.thoughtworks.gocd.secretmanager.aws.annotations.JsonSource;
+import com.thoughtworks.gocd.secretmanager.aws.exceptions.AWSCredentialsException;
 import com.thoughtworks.gocd.secretmanager.aws.extensions.EnvironmentVariable;
 import com.thoughtworks.gocd.secretmanager.aws.extensions.SystemProperty;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.mockito.Mock;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.amazonaws.SDKGlobalConfiguration.*;
 import static cd.go.plugin.base.GsonTransformer.toJson;
+import static com.amazonaws.SDKGlobalConfiguration.*;
 import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.ACCESS_KEY;
 import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.SECRET_ACCESS_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 
 class CredentialValidatorTest {
+    @Mock
+    private AWSCredentialsProviderChain credentialsProviderChain;
     private CredentialValidator credentialValidator;
 
     @BeforeEach
     void setUp() {
-        credentialValidator = new CredentialValidator();
+        initMocks(this);
+        credentialValidator = new CredentialValidator(credentialsProviderChain);
     }
 
     @Test
@@ -71,6 +79,8 @@ class CredentialValidatorTest {
     @ParameterizedTest
     @JsonSource(jsonFiles = "/missing-credentials-validation-error.json")
     void shouldBeInvalidWhenCredentialsAreNotProvidedAndFailsToDetectItUsingCredentialProviders(String expectedJson) throws JSONException {
+        when(credentialsProviderChain.autoDetectAWSCredentials()).thenThrow(new AWSCredentialsException("Boom!"));
+
         ValidationResult result = credentialValidator.validate(secretConfig(null, null));
 
         assertThat(result.isEmpty()).isFalse();
