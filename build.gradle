@@ -24,7 +24,7 @@ gocdPlugin {
   name = 'AWS Secrets Manager based secrets plugin for GoCD'
   description = 'AWS Secrets Manager based secrets plugin for GoCD'
   vendorName = 'Thoughtworks, Inc.'
-  vendorUrl = 'https://github.com/gocd-private/gocd-aws-based-secrets-plugin'
+  vendorUrl = 'https://github.com/gocd/gocd-aws-based-secrets-plugin'
 
   githubRepo {
     owner = System.getenv('GITHUB_USER') ?: 'bob'
