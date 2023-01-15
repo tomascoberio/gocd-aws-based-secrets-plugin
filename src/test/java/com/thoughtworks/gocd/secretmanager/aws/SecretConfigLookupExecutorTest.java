@@ -24,7 +24,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -32,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 
 class SecretConfigLookupExecutorTest {
@@ -45,7 +48,7 @@ class SecretConfigLookupExecutorTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
+        openMocks(this);
         request = mock(SecretConfigRequest.class);
         secretConfigLookupExecutor = new SecretConfigLookupExecutor(clientFactory);
     }

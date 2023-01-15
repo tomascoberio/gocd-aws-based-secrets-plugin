@@ -17,21 +17,18 @@
 package com.thoughtworks.gocd.secretmanager.aws;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.services.secretsmanager.AWSSecretsManagerClient;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import java.util.Collections;
 import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 class AWSClientFactoryTest {
     @Mock
@@ -40,7 +37,7 @@ class AWSClientFactoryTest {
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
+        openMocks(this);
         awsClientFactory = new AWSClientFactory(credentialsProviderChain);
 
         when(credentialsProviderChain.getAWSCredentialsProvider(anyString(), anyString())).thenReturn(mock(AWSCredentialsProvider.class));

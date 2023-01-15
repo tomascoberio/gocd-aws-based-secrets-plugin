@@ -20,13 +20,13 @@ import cd.go.plugin.base.validation.ValidationResult;
 import com.thoughtworks.gocd.secretmanager.aws.AWSCredentialsProviderChain;
 import com.thoughtworks.gocd.secretmanager.aws.annotations.JsonSource;
 import com.thoughtworks.gocd.secretmanager.aws.exceptions.AWSCredentialsException;
-import com.thoughtworks.gocd.secretmanager.aws.extensions.EnvironmentVariable;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.Mock;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -40,7 +40,7 @@ import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.ACCESS
 import static com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig.SECRET_ACCESS_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 
 @ExtendWith(SystemStubsExtension.class)
@@ -48,13 +48,15 @@ class CredentialValidatorTest {
 
     @SystemStub
     private SystemProperties systemProperties;
+    @SystemStub
+    private EnvironmentVariables env;
     @Mock
     private AWSCredentialsProviderChain credentialsProviderChain;
     private CredentialValidator credentialValidator;
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
+        openMocks(this);
         credentialValidator = new CredentialValidator(credentialsProviderChain);
     }
 
@@ -66,9 +68,9 @@ class CredentialValidatorTest {
     }
 
     @Test
-    @EnvironmentVariable(key = ACCESS_KEY_ENV_VAR, value = "access-key-from-env")
-    @EnvironmentVariable(key = SECRET_KEY_ENV_VAR, value = "secret-key-from-env")
     void shouldBeValidIfCredentialsAreProvidedAsEnvironmentVariable() {
+        env.set(ACCESS_KEY_ENV_VAR, "access-key-from-env");
+        env.set(SECRET_KEY_ENV_VAR, "secret-key-from-env");
         ValidationResult result = credentialValidator.validate(secretConfig(null, null));
 
         assertThat(result.isEmpty()).isTrue();
