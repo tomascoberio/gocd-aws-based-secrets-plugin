@@ -18,16 +18,27 @@ package com.thoughtworks.gocd.secretmanager.aws;
 
 import com.amazonaws.auth.*;
 import com.thoughtworks.gocd.secretmanager.aws.exceptions.AWSCredentialsException;
-import com.thoughtworks.gocd.secretmanager.aws.extensions.EnvironmentVariable;
-import com.thoughtworks.gocd.secretmanager.aws.extensions.SystemProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+@ExtendWith(SystemStubsExtension.class)
 class AWSCredentialsProviderChainTest {
+
+    @SystemStub
+    private SystemProperties systemProperties;
+
+    @SystemStub
+    private EnvironmentVariables env;
+
     private AWSCredentialsProviderChain awsCredentialsProviderChain;
 
     @BeforeEach
@@ -47,9 +58,9 @@ class AWSCredentialsProviderChainTest {
     }
 
     @Test
-    @EnvironmentVariable(key = ACCESS_KEY_ENV_VAR, value = "access-key-from-env")
-    @EnvironmentVariable(key = SECRET_KEY_ENV_VAR, value = "secret-key-from-env")
     void shouldReadCredentialsFromEnvironmentIfNotProvidedInMethodCall() {
+        env.set(SECRET_KEY_ENV_VAR, "secret-key-from-env");
+        env.set(ACCESS_KEY_ENV_VAR, "access-key-from-env");
         final AWSCredentialsProvider credentialsProvider = awsCredentialsProviderChain.getAWSCredentialsProvider(null, null);
         assertThat(credentialsProvider).isInstanceOf(EnvironmentVariableCredentialsProvider.class);
 
@@ -59,9 +70,9 @@ class AWSCredentialsProviderChainTest {
     }
 
     @Test
-    @SystemProperty(key = ACCESS_KEY_SYSTEM_PROPERTY, value = "access-key-from-system-prop")
-    @SystemProperty(key = SECRET_KEY_SYSTEM_PROPERTY, value = "secret-key-from-system-prop")
     void shouldReadCredentialsFromSystemPropertiesWhenEnvCredentialsAreNotProvided() {
+        systemProperties.set(ACCESS_KEY_SYSTEM_PROPERTY, "access-key-from-system-prop");
+        systemProperties.set(SECRET_KEY_SYSTEM_PROPERTY, "secret-key-from-system-prop");
         final AWSCredentialsProvider credentialsProvider = awsCredentialsProviderChain.getAWSCredentialsProvider(null, null);
         assertThat(credentialsProvider).isInstanceOf(SystemPropertiesCredentialsProvider.class);
 
@@ -82,7 +93,6 @@ class AWSCredentialsProviderChainTest {
 
     @Test
     void shouldErrorOutIfOnlyAccessKeyIsProvided() {
-
         try {
             awsCredentialsProviderChain.getAWSCredentialsProvider("access-key", null);
             fail("should fail");
@@ -93,7 +103,6 @@ class AWSCredentialsProviderChainTest {
 
     @Test
     void shouldErrorOutIfOnlySecretKeyIsProvided() {
-
         try {
             awsCredentialsProviderChain.getAWSCredentialsProvider(null, "secret-key");
             fail("should fail");
