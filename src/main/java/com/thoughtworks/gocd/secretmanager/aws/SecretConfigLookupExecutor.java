@@ -17,11 +17,23 @@
 package com.thoughtworks.gocd.secretmanager.aws;
 
 import cd.go.plugin.base.executors.secrets.LookupExecutor;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.secretsmanager.AWSSecretsManager;
+import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
+import com.amazonaws.services.secretsmanager.model.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
+import com.thoughtworks.gocd.secretmanager.aws.models.Secret;
 import com.thoughtworks.gocd.secretmanager.aws.models.Secrets;
 import com.thoughtworks.gocd.secretmanager.aws.request.SecretConfigRequest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,31 +55,70 @@ public class SecretConfigLookupExecutor extends LookupExecutor<SecretConfigReque
 
     @Override
     protected GoPluginApiResponse execute(SecretConfigRequest request) {
-        SecretManagerClient client;
+        final Secrets secrets = new Secrets();
         try {
-            client = awsClientFactory.client(request.getConfiguration());
+            for (String key : request.getKeys()) {
+                String secretString = retrieve(
+                        request.getConfiguration().getAwsAccessKey(),
+                        request.getConfiguration().getAwsSecretAccessKey(),
+                        key,
+                        "eu-north-1"
+                );
+                LOGGER.info(key + "=" + secretString);
 
-            List<String> secretIds = request.getKeys();
+                Map<String, String> result =  new Gson().fromJson(secretString, Map.class);
 
-            if (secretIds == null || secretIds.isEmpty()) {
-                return DefaultGoPluginApiResponse.badRequest("No secret key provided!!!");
-            }
-
-            Map result = client.lookup(request.getConfiguration().getSecretName());
-
-            final Secrets secrets = new Secrets();
-
-            secretIds.forEach(secretId -> {
-                if (result.containsKey(secretId)) {
-                    secrets.add(secretId, result.get(secretId).toString());
+                ObjectMapper objectMapper = new ObjectMapper();
+                String prettyPrintedJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
+                LOGGER.info("SECRET JSON TO MAP: " + prettyPrintedJson);
+                secrets.add(key, secretString);
+                /*
+                for (String item : result.keySet()) {
+                    String value = result.get(item);
+                    secrets.add(item, value);
                 }
-            });
+                 */
 
+            }
             return DefaultGoPluginApiResponse.success(toJson(secrets));
         } catch (Exception e) {
             LOGGER.error("Failed to lookup secret from AWS.", e);
             String errorMessage = format("Failed to lookup secrets from AWS - %s, See logs for more information.", e.getMessage());
             return DefaultGoPluginApiResponse.error(toJson(singletonMap("message", errorMessage)));
+        }
+    }
+
+    public String retrieve(String key, String secretKey, String secretName, String region) {
+
+        LOGGER.info("LETS BRING SECRET: " + secretName);
+
+        try {
+            // ----------------------------------------------------------------
+            BasicAWSCredentials credentials = new BasicAWSCredentials(key, secretKey);
+            AWSSecretsManager secretsManagerClient = AWSSecretsManagerClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                    .build();
+
+            ListSecretsRequest listSecretsRequest = new ListSecretsRequest();
+            ListSecretsResult listSecretsResult = secretsManagerClient.listSecrets(listSecretsRequest);
+
+            GetSecretValueRequest requestToAWS = new GetSecretValueRequest();
+
+            LOGGER.info("[SECRETS AVAILABLE TO READ IN AWS:");
+            for (SecretListEntry secret : listSecretsResult.getSecretList()) {
+                LOGGER.info(secret.getName());
+
+            }
+            LOGGER.info("]");
+
+            requestToAWS.setSecretId(secretName);
+            GetSecretValueResult secretValue = secretsManagerClient.getSecretValue(requestToAWS);
+            return secretValue.getSecretString();
+
+        } catch (Exception e) {
+            LOGGER.error("Error retrieving secret", e);
+            return "_empty_";
         }
     }
 

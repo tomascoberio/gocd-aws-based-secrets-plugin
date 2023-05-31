@@ -22,6 +22,7 @@ import com.amazonaws.secretsmanager.caching.SecretCache;
 import com.amazonaws.secretsmanager.caching.SecretCacheConfiguration;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
+import com.amazonaws.services.secretsmanager.model.ListSecretsRequest;
 import com.google.gson.Gson;
 import com.thoughtworks.gocd.secretmanager.aws.models.SecretConfig;
 
@@ -45,6 +46,7 @@ public class SecretManagerClient {
     }
 
     public Map lookup(String secretId) {
+
         String secretString = secretCache.getSecretString(secretId);
 
         if (isNotBlank(secretString)) {
